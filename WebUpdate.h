@@ -1,13 +1,14 @@
 #include<iostream>
 #include<vector>
 #include<cstring>
-#include<filesystem>
+#include <experimental/filesystem>
 #include<io.h>
 
 using std::cout;
 using std::endl;
 using std::vector;
 using std::string;
+using namespace std::experimental::filesystem;
 
 struct FileInfo {
     char dir[100] = "";
