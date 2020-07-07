@@ -1,0 +1,42 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/WebUpdate.h
+iostream
+-
+vector
+-
+cstring
+-
+filesystem
+-
+sys/io.h
+-
+
+/home/carl/MDWebsite/src/main.cpp
+iostream
+-
+vector
+-
+string
+-
+filesystem
+-
+sys/io.h
+-
+regex
+-
+fstream
+-
+string
+-
+dirent.h
+-
+WebUpdate.h
+/home/carl/MDWebsite/src/WebUpdate.h
+

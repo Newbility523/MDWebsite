@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/home/carl/MDWebsite/build",
+  "command": "/bin/g++-9   -I/home/carl/MDWebsite/include  -g   -std=c++17 -o CMakeFiles/MDWebsite.dir/src/main.cpp.o -c /home/carl/MDWebsite/src/main.cpp",
+  "file": "/home/carl/MDWebsite/src/main.cpp"
+}
+]
