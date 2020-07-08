@@ -13,17 +13,19 @@ using namespace std;
 using namespace std::filesystem;
 
 // config
-const char* srcDir = "/home/carl/test";
+const char* srcDir = "/home/carl/Note";
+// const char* srcDir = "/home/carl/test";
 const char* targetDir = "/home/carl/WebOutput";
 const char* cmdFormat = "showdown makehtml -i %s -o %s";
-const string cssPathStr = "config\\css\\github-markdown.css";
-const char* templatePath = "config\\Template.html";
+const string cssPathStr = "config/css/github-markdown.css";
+const char* templatePath = "config/Template.html";
 regex cssRegex("<!-- cssPath -->");
 regex bodyRegex("<!-- body -->");
 
 // global
 string htmlTemplate;
 string cssPath;
+string cssName = "github-markdown.css";
 
 int Init()
 {
@@ -45,7 +47,7 @@ int Init()
 
     path oriCssPath(cssPath);
     string targetStr = targetDir;
-    cssPath = targetStr + "\\" + oriCssPath.filename().string();
+    cssPath = targetStr + "/" + oriCssPath.filename().string();
     ifstream ifileStream;
     ifileStream.open(htmlPath, ios::out);
     int length;
@@ -64,9 +66,41 @@ int Init()
     return 0;
 }
 
-string FormatHtml(const char* buffer)
+string GetCssPath(path filePath)
 {
-    string result = regex_replace(htmlTemplate, cssRegex, cssPath);
+    string fullPath = filePath.string();
+    int index = fullPath.find(targetDir);
+    // cout << "checking " << fullPath << endl;
+    // cout << "find " << targetDir << endl;
+
+    string result = "";
+    if (index != -1)
+    {
+        // cout << "index " << index << endl;
+        for (int i = index + strlen(targetDir) + 1; i < fullPath.length(); ++i)
+        {
+            if (fullPath[i] == '/')
+            {
+                result = "../" + result;
+            }
+        }
+
+        result = result + cssName;
+    }
+    else
+    {
+       result = cssPath;
+    }
+
+    // cout << "result " << result << endl;
+
+    return result;
+}
+
+string FormatHtml(const char* buffer, path filePath)
+{
+    string relateCssPath = GetCssPath(filePath);
+    string result = regex_replace(htmlTemplate, cssRegex, relateCssPath);
     result = regex_replace(result, bodyRegex, buffer);
 
     return result;
@@ -103,16 +137,13 @@ string ConvertPath(const char* buffer)
     return newStr;
 }
 
-void CreateCatalogue(vector<FileInfo>* infos)
+void CreateCatalogue(vector<string> filePaths)
 {
     string catalogueStr = u8"# Catalogue \n\n";
     const char* fmt = "* [%s](%s)\n";
-    for (vector<FileInfo>::const_iterator iter = infos->begin(); iter != infos->end(); ++iter)
+    for (vector<string>::const_iterator iter = filePaths.begin(); iter != filePaths.end(); ++iter)
     {
-        FileInfo info = *iter;
-        char pathChar[300] = "";
-        info.FullPath(pathChar);
-        path path(pathChar);
+        path path(*iter);
         if (path.extension() == ".md")
         {
             char item[100] = "";
@@ -120,16 +151,16 @@ void CreateCatalogue(vector<FileInfo>* infos)
             string fullPath = path.u8string();
             //string relative = "E:\\Note\\";
             string temp = srcDir;
-            string relative = temp + "\\";
+            string relative = temp + "/";
             fullPath = fullPath.substr(relative.length(), fullPath.length());
             snprintf(item, sizeof(item), fmt, path.stem().u8string().c_str(), fullPath.c_str());
             catalogueStr = catalogueStr + item;
         }
     }
 
-    //cout << "catalogueStr: " << catalogueStr << endl;
+    cout << "catalogueStr: " << catalogueStr << endl;
 
-    string fileStr = string(srcDir) + "\\Catalogue.md";
+    string fileStr = string(srcDir) + "/Catalogue.md";
     path catalogueInfoPath(fileStr);
     fstream fstream;
     fstream.open(fileStr, ios::trunc | ios::out);
@@ -140,7 +171,7 @@ void CreateCatalogue(vector<FileInfo>* infos)
         fstream.close();
 
         FileInfo catalogueInfo(catalogueInfoPath.parent_path().string().c_str(), catalogueInfoPath.filename().string().c_str());
-        infos->push_back(catalogueInfo);
+        filePaths.push_back(fileStr);
     }
     else
     {
@@ -198,7 +229,7 @@ int FileFactor(path filePath)
 
     string raw = buffer;
     raw = ConvertPath(raw.c_str());
-    raw = FormatHtml(raw.c_str());
+    raw = FormatHtml(raw.c_str(), filePath);
 
     const char* newBuffer = raw.c_str();
 
@@ -211,70 +242,65 @@ int FileFactor(path filePath)
     return 0;
 }
 
-
-
 int main()
 {
-    // Init();
+    Init();
     Updater updater = Updater();
     updater.CreateCatalog(srcDir);
-    updater.DisplayVectorStr();
+    // updater.DisplayVectorStr();
 
-    // vector<FileInfo>* infos = updater.GetFileInfos();
+    vector<string> infos = updater.GetFilePaths();
 
-    // if (infos != NULL)
-    // {
-    //     CreateCatalogue(infos);
+    CreateCatalogue(infos);
 
-    //     if (ClearTargetDirectory(targetDir) == -1)
-    //     {
-    //         return 0;
-    //     }
+    if (ClearTargetDirectory(targetDir) == -1)
+    {
+        return 0;
+    }
 
-    //     for (vector<FileInfo>::const_iterator iter = infos->begin(); iter != infos->end(); ++iter)
-    //     {
-    //         FileInfo info = *iter;
+    for (vector<string>::const_iterator iter = infos.begin(); iter != infos.end(); ++iter)
+    {
+        string oriFilePath = *iter;
 
-    //         char srcFullPath[300] = "";
-    //         info.FullPath(srcFullPath);
-    //         path srcPath(srcFullPath);
+        char srcFullPath[300] = "";
+        // info.FullPath(srcFullPath);
+        path srcPath(oriFilePath);
 
-    //         string desPathStr = srcPath.string();
-    //         desPathStr = desPathStr.substr(strlen(srcDir), desPathStr.length());
-    //         desPathStr = targetDir + desPathStr;
-    //         //cout << desPathStr << endl;
-    //         path desPath(desPathStr);
+        string desPathStr = srcPath.string();
+        desPathStr = desPathStr.substr(strlen(srcDir), desPathStr.length());
+        desPathStr = targetDir + desPathStr;
+        cout << desPathStr << endl;
+        path desPath(desPathStr);
 
-    //         if (!exists(desPath.parent_path()))
-    //         {
-    //             create_directories(desPath.parent_path());
-    //         }
+        if (!exists(desPath.parent_path()))
+        {
+            create_directories(desPath.parent_path());
+        }
 
-    //         if (srcPath.extension() == ".md")
-    //         {
-    //             desPath.replace_extension(".html");
+        if (srcPath.extension() == ".md")
+        {
+            desPath.replace_extension(".html");
 
-    //             char cmd[300] = "";
-    //             snprintf(cmd, 200, cmdFormat, srcPath.string().c_str(), desPath.string().c_str());
-    //             cout << cmd << endl;
+            char cmd[300] = "";
+            snprintf(cmd, 200, cmdFormat, srcPath.string().c_str(), desPath.string().c_str());
+            cout << cmd << endl;
 
-    //             char result[1024 * 4] = "";
-    //             if (CMDRunder(cmd, result) == 1)
-    //             {
-    //                 cout << "running : " << cmd << endl;
-    //             }
+            char result[1024 * 4] = "";
+            if (CMDRunder(cmd, result) == 1)
+            {
+                cout << "running : " << cmd << endl;
+            }
 
-    //             FileFactor(desPath);
-    //         }
-    //         else
-    //         {
-    //             cout << "copying file : " << desPath.filename() << endl;
-    //             copy(srcPath, desPath);
-    //         }
-    //     }
+            FileFactor(desPath);
+        }
+        else
+        {
+            cout << "copying file : " << desPath.filename() << endl;
+            copy(srcPath, desPath);
+        }
+    }
 
-    //     CopyStyleFile();
-    // }
+    CopyStyleFile();
 
     return 0;
 }

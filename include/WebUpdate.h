@@ -93,8 +93,8 @@ public:
         return (*paths)[0];
     }
 
-    // vector<FileInfo>* GetFileInfos()
-    // {
-    //     return paths;
-    // }
+    vector<string> GetFilePaths()
+    {
+        return filePaths;
+    }
 };
